@@ -1,0 +1,476 @@
+import { useState, useMemo } from "react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ScatterChart, Scatter, Cell, Legend, ReferenceLine, Area, AreaChart, ComposedChart } from "recharts";
+
+const DATA = {"config":{"n_estimators":200,"edge_threshold":0.1,"confidence_threshold":0.55,"transaction_cost":0.02,"kelly_fraction":0.25},"fold_metrics":[{"fold":1,"accuracy":0.6216,"precision":0.6142,"recall":0.7076,"f1":0.6576,"train_size":335,"test_size":333},{"fold":2,"accuracy":0.6517,"precision":0.6089,"recall":0.7032,"f1":0.6527,"train_size":668,"test_size":333},{"fold":3,"accuracy":0.6697,"precision":0.6667,"recall":0.7209,"f1":0.6927,"train_size":1001,"test_size":333},{"fold":4,"accuracy":0.6817,"precision":0.6703,"recall":0.7337,"f1":0.7006,"train_size":1334,"test_size":333},{"fold":5,"accuracy":0.6727,"precision":0.6559,"recall":0.7305,"f1":0.6912,"train_size":1667,"test_size":333}],"feature_importances":{"price_ma_30":0.082751,"price_ma_7":0.072955,"price":0.071974,"buy_volume_pct":0.047398,"retail_sentiment":0.038224,"sentiment_divergence":0.034287,"maker_ratio":0.027947,"momentum_30d":0.026922,"price_std_7":0.02379,"whale_pct":0.02315,"depth_imbalance":0.022623,"price_deviation_from_ma":0.022595,"normalized_volume":0.021994,"volume_7d_avg":0.021912,"price_range_7d":0.021398,"price_impact_1k":0.02096,"vol_price_corr":0.020752,"time_weighted_momentum":0.020399,"depth_no":0.020307,"hours_since_last_trade":0.019999},"trading_metrics":{"total_trades":109,"wins":61,"losses":48,"win_rate":0.5596,"total_pnl":2236.54,"avg_pnl":20.52,"avg_win":493.39,"avg_loss":-580.42,"profit_factor":1.08,"sharpe_ratio":-12.531,"max_drawdown":0.2893,"final_bankroll":12236.54,"return_pct":22.37,"avg_edge":0.1469,"avg_mae":0.2765,"avg_mfe":0.2852,"avg_position_size":552.35},"equity_curve":[10000.0,10441.35,9908.84,9403.49,9837.14,9335.45,8859.34,8407.51,8822.17,8372.24,7945.26,8459.28,8027.86,7618.43,7845.08,8013.79,8293.1,8474.49,8777.89,9539.6,9053.08,9651.56,9159.33,9648.86,9156.76,9394.67,9736.37,9239.82,8768.58,8321.39,8697.23,9168.79,8701.18,9100.21,9356.25,9622.13,10022.14,10660.08,11339.66,12356.13,12982.89,13228.34,13859.37,13152.54,13530.43,14187.38,13463.82,14159.63,13437.48,12752.17,12101.81,12686.15,12039.16,11425.16,11955.7,12465.11,11829.39,12368.81,11738.0,12295.86,13182.65,12510.33,11872.31,12380.07,11748.69,11149.51,11758.99,11159.28,11797.41,11195.74,10624.76,10082.9,10417.32,10877.25,11153.26,10584.45,11054.62,10490.83,10876.4,10321.71,11139.95,11468.73,11925.92,12571.63,11930.47,11322.02,10744.6,11195.59,11764.64,12288.67,13165.69,13721.32,13021.53,12357.43,11727.2,12209.63,12698.37,12050.75,11436.17,11750.62,11151.34,11551.82,11986.49,12434.16,13370.96,13911.64,14317.26,13587.08,12894.14,12236.54],"trade_details":[{"entry":0.5256,"model_prob":0.7255,"edge":0.1999,"outcome":1,"pnl":441.35,"log_return":0.6433,"mae":0.1559,"mfe":0.4744,"position_size":500.0},{"entry":0.5546,"model_prob":0.6563,"edge":0.1017,"outcome":0,"pnl":-532.51,"log_return":-5.0,"mae":0.5546,"mfe":0.0634,"position_size":522.07},{"entry":0.4607,"model_prob":0.6007,"edge":0.14,"outcome":0,"pnl":-505.35,"log_return":-5.0,"mae":0.4607,"mfe":0.0169,"position_size":495.44},{"entry":0.5148,"model_prob":0.6641,"edge":0.1492,"outcome":1,"pnl":433.65,"log_return":0.6639,"mae":0.1038,"mfe":0.4852,"position_size":470.17},{"entry":0.511,"model_prob":0.6855,"edge":0.1745,"outcome":0,"pnl":-501.69,"log_return":-5.0,"mae":0.511,"mfe":0.0309,"position_size":491.86},{"entry":0.5478,"model_prob":0.7089,"edge":0.1612,"outcome":0,"pnl":-476.11,"log_return":-5.0,"mae":0.5478,"mfe":0.0825,"position_size":466.77},{"entry":0.4271,"model_prob":0.6339,"edge":0.2068,"outcome":0,"pnl":-451.83,"log_return":-5.0,"mae":0.4271,"mfe":0.0109,"position_size":442.97},{"entry":0.4984,"model_prob":0.6269,"edge":0.1285,"outcome":1,"pnl":414.66,"log_return":0.6963,"mae":0.0782,"mfe":0.5016,"position_size":420.38},{"entry":0.533,"model_prob":0.644,"edge":0.111,"outcome":0,"pnl":-449.93,"log_return":-5.0,"mae":0.533,"mfe":0.0153,"position_size":441.11},{"entry":0.5313,"model_prob":0.7329,"edge":0.2016,"outcome":0,"pnl":-426.98,"log_return":-5.0,"mae":0.5313,"mfe":0.0937,"position_size":418.61},{"entry":0.4322,"model_prob":0.6574,"edge":0.2252,"outcome":1,"pnl":514.02,"log_return":0.8389,"mae":0.0614,"mfe":0.5678,"position_size":397.26},{"entry":0.504,"model_prob":0.6465,"edge":0.1425,"outcome":0,"pnl":-431.42,"log_return":-5.0,"mae":0.504,"mfe":0.0842,"position_size":422.96},{"entry":0.5386,"model_prob":0.6971,"edge":0.1585,"outcome":0,"pnl":-409.42,"log_return":-5.0,"mae":0.5386,"mfe":0.0219,"position_size":401.39},{"entry":0.6192,"model_prob":0.7565,"edge":0.1373,"outcome":1,"pnl":226.64,"log_return":0.4793,"mae":0.0254,"mfe":0.3808,"position_size":380.92},{"entry":0.6896,"model_prob":0.8364,"edge":0.1468,"outcome":1,"pnl":168.71,"log_return":0.3716,"mae":0.0188,"mfe":0.3104,"position_size":392.25},{"entry":0.5824,"model_prob":0.8055,"edge":0.2231,"outcome":1,"pnl":279.3,"log_return":0.5406,"mae":0.0308,"mfe":0.4176,"position_size":400.69},{"entry":0.6861,"model_prob":0.7998,"edge":0.1137,"outcome":1,"pnl":181.39,"log_return":0.3767,"mae":0.1172,"mfe":0.3139,"position_size":414.65},{"entry":0.576,"model_prob":0.7326,"edge":0.1566,"outcome":1,"pnl":303.41,"log_return":0.5516,"mae":0.0419,"mfe":0.424,"position_size":423.72},{"entry":0.3629,"model_prob":0.6093,"edge":0.2463,"outcome":1,"pnl":761.71,"log_return":1.0136,"mae":0.065,"mfe":0.6371,"position_size":438.89},{"entry":0.615,"model_prob":0.7319,"edge":0.1169,"outcome":0,"pnl":-486.52,"log_return":-5.0,"mae":0.615,"mfe":0.0138,"position_size":476.98},{"entry":0.427,"model_prob":0.5814,"edge":0.1544,"outcome":1,"pnl":598.48,"log_return":0.8511,"mae":0.1081,"mfe":0.573,"position_size":452.65},{"entry":0.6619,"model_prob":0.7776,"edge":0.1157,"outcome":0,"pnl":-492.23,"log_return":-5.0,"mae":0.6619,"mfe":0.0495,"position_size":482.58},{"entry":0.4787,"model_prob":0.595,"edge":0.1162,"outcome":1,"pnl":489.52,"log_return":0.7366,"mae":0.1175,"mfe":0.5213,"position_size":457.97},{"entry":0.4223,"model_prob":0.6243,"edge":0.202,"outcome":0,"pnl":-492.09,"log_return":-5.0,"mae":0.4223,"mfe":0.052,"position_size":482.44},{"entry":0.6495,"model_prob":0.7504,"edge":0.1009,"outcome":1,"pnl":237.91,"log_return":0.4315,"mae":0.1394,"mfe":0.3505,"position_size":457.84},{"entry":0.5723,"model_prob":0.6737,"edge":0.1015,"outcome":1,"pnl":341.7,"log_return":0.5581,"mae":0.1056,"mfe":0.4277,"position_size":469.73},{"entry":0.4794,"model_prob":0.7147,"edge":0.2352,"outcome":0,"pnl":-496.55,"log_return":-5.0,"mae":0.4794,"mfe":0.0652,"position_size":486.82},{"entry":0.4956,"model_prob":0.6548,"edge":0.1591,"outcome":0,"pnl":-471.23,"log_return":-5.0,"mae":0.4956,"mfe":0.0645,"position_size":461.99},{"entry":0.5138,"model_prob":0.7258,"edge":0.2119,"outcome":0,"pnl":-447.2,"log_return":-5.0,"mae":0.5138,"mfe":0.0319,"position_size":438.43},{"entry":0.5199,"model_prob":0.6446,"edge":0.1247,"outcome":1,"pnl":375.85,"log_return":0.6541,"mae":0.0736,"mfe":0.4801,"position_size":416.07},{"entry":0.4752,"model_prob":0.6135,"edge":0.1383,"outcome":1,"pnl":471.55,"log_return":0.744,"mae":0.1338,"mfe":0.5248,"position_size":434.86},{"entry":0.5595,"model_prob":0.6765,"edge":0.117,"outcome":0,"pnl":-467.61,"log_return":-5.0,"mae":0.5595,"mfe":0.0234,"position_size":458.44},{"entry":0.5162,"model_prob":0.66,"edge":0.1438,"outcome":1,"pnl":399.04,"log_return":0.6612,"mae":0.112,"mfe":0.4838,"position_size":435.06},{"entry":0.6318,"model_prob":0.7686,"edge":0.1368,"outcome":1,"pnl":256.03,"log_return":0.4591,"mae":0.1447,"mfe":0.3682,"position_size":455.01},{"entry":0.6296,"model_prob":0.7408,"edge":0.1112,"outcome":1,"pnl":265.88,"log_return":0.4627,"mae":0.0877,"mfe":0.3704,"position_size":467.81},{"entry":0.5401,"model_prob":0.7218,"edge":0.1817,"outcome":1,"pnl":400.02,"log_return":0.616,"mae":0.1414,"mfe":0.4599,"position_size":481.11},{"entry":0.4361,"model_prob":0.5978,"edge":0.1617,"outcome":1,"pnl":637.94,"log_return":0.8299,"mae":0.1101,"mfe":0.5639,"position_size":501.11},{"entry":0.4357,"model_prob":0.5635,"edge":0.1278,"outcome":1,"pnl":679.58,"log_return":0.8307,"mae":0.0502,"mfe":0.5643,"position_size":533.0},{"entry":0.3555,"model_prob":0.5885,"edge":0.233,"outcome":1,"pnl":1016.47,"log_return":1.0342,"mae":0.1009,"mfe":0.6445,"position_size":566.98},{"entry":0.4915,"model_prob":0.6822,"edge":0.1907,"outcome":1,"pnl":626.76,"log_return":0.7103,"mae":0.1141,"mfe":0.5085,"position_size":617.81},{"entry":0.7152,"model_prob":0.8446,"edge":0.1294,"outcome":1,"pnl":245.45,"log_return":0.3351,"mae":0.0296,"mfe":0.2848,"position_size":649.14},{"entry":0.5066,"model_prob":0.694,"edge":0.1875,"outcome":1,"pnl":631.02,"log_return":0.6801,"mae":0.1262,"mfe":0.4934,"position_size":661.42},{"entry":0.4421,"model_prob":0.5803,"edge":0.1382,"outcome":0,"pnl":-706.83,"log_return":-5.0,"mae":0.4421,"mfe":0.0465,"position_size":692.97},{"entry":0.6271,"model_prob":0.7509,"edge":0.1238,"outcome":1,"pnl":377.89,"log_return":0.4666,"mae":0.1674,"mfe":0.3729,"position_size":657.63},{"entry":0.5022,"model_prob":0.6307,"edge":0.1284,"outcome":1,"pnl":656.95,"log_return":0.6887,"mae":0.1305,"mfe":0.4978,"position_size":676.52},{"entry":0.4218,"model_prob":0.5888,"edge":0.167,"outcome":0,"pnl":-723.56,"log_return":-5.0,"mae":0.4218,"mfe":0.0556,"position_size":709.37},{"entry":0.487,"model_prob":0.6291,"edge":0.1422,"outcome":1,"pnl":695.8,"log_return":0.7196,"mae":0.0621,"mfe":0.513,"position_size":673.19},{"entry":0.6318,"model_prob":0.7803,"edge":0.1485,"outcome":0,"pnl":-722.14,"log_return":-5.0,"mae":0.6318,"mfe":0.0248,"position_size":707.98},{"entry":0.6141,"model_prob":0.7551,"edge":0.141,"outcome":0,"pnl":-685.31,"log_return":-5.0,"mae":0.6141,"mfe":0.1114,"position_size":671.87},{"entry":0.6332,"model_prob":0.7521,"edge":0.1189,"outcome":0,"pnl":-650.36,"log_return":-5.0,"mae":0.6332,"mfe":0.0779,"position_size":637.61},{"entry":0.5036,"model_prob":0.6438,"edge":0.1402,"outcome":1,"pnl":584.34,"log_return":0.686,"mae":0.0204,"mfe":0.4964,"position_size":605.09},{"entry":0.5297,"model_prob":0.6747,"edge":0.145,"outcome":0,"pnl":-646.99,"log_return":-5.0,"mae":0.5297,"mfe":0.0417,"position_size":634.31},{"entry":0.6173,"model_prob":0.7217,"edge":0.1044,"outcome":0,"pnl":-614.0,"log_return":-5.0,"mae":0.6173,"mfe":0.0885,"position_size":601.96},{"entry":0.5132,"model_prob":0.6355,"edge":0.1224,"outcome":1,"pnl":530.54,"log_return":0.6672,"mae":0.0436,"mfe":0.4868,"position_size":571.26},{"entry":0.5341,"model_prob":0.6651,"edge":0.1309,"outcome":1,"pnl":509.41,"log_return":0.6271,"mae":0.1045,"mfe":0.4659,"position_size":597.78},{"entry":0.5296,"model_prob":0.6298,"edge":0.1002,"outcome":0,"pnl":-635.72,"log_return":-5.0,"mae":0.5296,"mfe":0.0617,"position_size":623.26},{"entry":0.5176,"model_prob":0.669,"edge":0.1514,"outcome":1,"pnl":539.42,"log_return":0.6586,"mae":0.1355,"mfe":0.4824,"position_size":591.47},{"entry":0.6208,"model_prob":0.7264,"edge":0.1055,"outcome":0,"pnl":-630.81,"log_return":-5.0,"mae":0.6208,"mfe":0.0182,"position_size":618.44},{"entry":0.5075,"model_prob":0.6424,"edge":0.135,"outcome":1,"pnl":557.86,"log_return":0.6783,"mae":0.0925,"mfe":0.4925,"position_size":586.9},{"entry":0.4061,"model_prob":0.6199,"edge":0.2138,"outcome":1,"pnl":886.79,"log_return":0.9011,"mae":0.0358,"mfe":0.5939,"position_size":614.79},{"entry":0.5934,"model_prob":0.7058,"edge":0.1124,"outcome":0,"pnl":-672.32,"log_return":-5.0,"mae":0.5934,"mfe":0.0125,"position_size":659.13},{"entry":0.4713,"model_prob":0.6376,"edge":0.1662,"outcome":0,"pnl":-638.03,"log_return":-5.0,"mae":0.4713,"mfe":0.0278,"position_size":625.52},{"entry":0.5332,"model_prob":0.6334,"edge":0.1002,"outcome":1,"pnl":507.77,"log_return":0.6288,"mae":0.0767,"mfe":0.4668,"position_size":593.62},{"entry":0.5321,"model_prob":0.6875,"edge":0.1554,"outcome":0,"pnl":-631.38,"log_return":-5.0,"mae":0.5321,"mfe":0.0895,"position_size":619.0},{"entry":0.447,"model_prob":0.5587,"edge":0.1117,"outcome":0,"pnl":-599.18,"log_return":-5.0,"mae":0.447,"mfe":0.0144,"position_size":587.43},{"entry":0.4732,"model_prob":0.6171,"edge":0.1439,"outcome":1,"pnl":609.49,"log_return":0.7482,"mae":0.1317,"mfe":0.5268,"position_size":557.48},{"entry":0.4939,"model_prob":0.6616,"edge":0.1678,"outcome":0,"pnl":-599.71,"log_return":-5.0,"mae":0.4939,"mfe":0.0275,"position_size":587.95},{"entry":0.4622,"model_prob":0.5705,"edge":0.1083,"outcome":1,"pnl":638.13,"log_return":0.7718,"mae":0.0158,"mfe":0.5378,"position_size":557.96},{"entry":0.3557,"model_prob":0.5804,"edge":0.2247,"outcome":0,"pnl":-601.67,"log_return":-5.0,"mae":0.3557,"mfe":0.026,"position_size":589.87},{"entry":0.6368,"model_prob":0.7462,"edge":0.1094,"outcome":0,"pnl":-570.98,"log_return":-5.0,"mae":0.6368,"mfe":0.0934,"position_size":559.79},{"entry":0.6149,"model_prob":0.8068,"edge":0.1919,"outcome":0,"pnl":-541.86,"log_return":-5.0,"mae":0.6149,"mfe":0.1087,"position_size":531.24},{"entry":0.5941,"model_prob":0.7168,"edge":0.1228,"outcome":1,"pnl":334.43,"log_return":0.5208,"mae":0.1666,"mfe":0.4059,"position_size":504.14},{"entry":0.5255,"model_prob":0.6425,"edge":0.117,"outcome":1,"pnl":459.93,"log_return":0.6434,"mae":0.1388,"mfe":0.4745,"position_size":520.87},{"entry":0.6547,"model_prob":0.7596,"edge":0.105,"outcome":1,"pnl":276.01,"log_return":0.4236,"mae":0.0697,"mfe":0.3453,"position_size":543.86},{"entry":0.5548,"model_prob":0.748,"edge":0.1931,"outcome":0,"pnl":-568.82,"log_return":-5.0,"mae":0.5548,"mfe":0.0667,"position_size":557.66},{"entry":0.524,"model_prob":0.624,"edge":0.1001,"outcome":1,"pnl":470.17,"log_return":0.6463,"mae":0.0041,"mfe":0.476,"position_size":529.22},{"entry":0.4681,"model_prob":0.6032,"edge":0.135,"outcome":0,"pnl":-563.79,"log_return":-5.0,"mae":0.4681,"mfe":0.0138,"position_size":552.73},{"entry":0.5698,"model_prob":0.6794,"edge":0.1097,"outcome":1,"pnl":385.57,"log_return":0.5625,"mae":0.0714,"mfe":0.4302,"position_size":524.54},{"entry":0.5103,"model_prob":0.6152,"edge":0.105,"outcome":0,"pnl":-554.7,"log_return":-5.0,"mae":0.5103,"mfe":0.0367,"position_size":543.82},{"entry":0.3838,"model_prob":0.6269,"edge":0.243,"outcome":1,"pnl":818.24,"log_return":0.9576,"mae":0.0456,"mfe":0.6162,"position_size":516.09},{"entry":0.621,"model_prob":0.7356,"edge":0.1146,"outcome":1,"pnl":328.78,"log_return":0.4764,"mae":0.056,"mfe":0.379,"position_size":557.0},{"entry":0.5503,"model_prob":0.6714,"edge":0.1212,"outcome":1,"pnl":457.19,"log_return":0.5973,"mae":0.0514,"mfe":0.4497,"position_size":573.44},{"entry":0.4755,"model_prob":0.6194,"edge":0.1438,"outcome":1,"pnl":645.71,"log_return":0.7433,"mae":0.0689,"mfe":0.5245,"position_size":596.3},{"entry":0.4804,"model_prob":0.6499,"edge":0.1696,"outcome":0,"pnl":-641.15,"log_return":-5.0,"mae":0.4804,"mfe":0.0873,"position_size":628.58},{"entry":0.4854,"model_prob":0.6446,"edge":0.1592,"outcome":0,"pnl":-608.45,"log_return":-5.0,"mae":0.4854,"mfe":0.0029,"position_size":596.52},{"entry":0.5454,"model_prob":0.662,"edge":0.1166,"outcome":0,"pnl":-577.42,"log_return":-5.0,"mae":0.5454,"mfe":0.1074,"position_size":566.1},{"entry":0.5378,"model_prob":0.6542,"edge":0.1165,"outcome":1,"pnl":451.0,"log_return":0.6203,"mae":0.0401,"mfe":0.4622,"position_size":537.23},{"entry":0.491,"model_prob":0.5978,"edge":0.1068,"outcome":1,"pnl":569.04,"log_return":0.7113,"mae":0.0764,"mfe":0.509,"position_size":559.78},{"entry":0.5233,"model_prob":0.7028,"edge":0.1794,"outcome":1,"pnl":524.03,"log_return":0.6475,"mae":0.1543,"mfe":0.4767,"position_size":588.23},{"entry":0.4086,"model_prob":0.6159,"edge":0.2073,"outcome":1,"pnl":877.03,"log_return":0.895,"mae":0.0237,"mfe":0.5914,"position_size":614.43},{"entry":0.5365,"model_prob":0.6416,"edge":0.1051,"outcome":1,"pnl":555.62,"log_return":0.6228,"mae":0.0248,"mfe":0.4635,"position_size":658.28},{"entry":0.4438,"model_prob":0.5855,"edge":0.1417,"outcome":0,"pnl":-699.79,"log_return":-5.0,"mae":0.4438,"mfe":0.0666,"position_size":686.07},{"entry":0.5781,"model_prob":0.7669,"edge":0.1888,"outcome":0,"pnl":-664.1,"log_return":-5.0,"mae":0.5781,"mfe":0.1131,"position_size":651.08},{"entry":0.561,"model_prob":0.7028,"edge":0.1419,"outcome":0,"pnl":-630.23,"log_return":-5.0,"mae":0.561,"mfe":0.0777,"position_size":617.87},{"entry":0.5427,"model_prob":0.6691,"edge":0.1265,"outcome":1,"pnl":482.43,"log_return":0.6113,"mae":0.0032,"mfe":0.4573,"position_size":586.36},{"entry":0.5493,"model_prob":0.6829,"edge":0.1336,"outcome":1,"pnl":488.74,"log_return":0.5992,"mae":0.0502,"mfe":0.4507,"position_size":610.48},{"entry":0.5122,"model_prob":0.6377,"edge":0.1255,"outcome":0,"pnl":-647.62,"log_return":-5.0,"mae":0.5122,"mfe":0.0311,"position_size":634.92},{"entry":0.474,"model_prob":0.5972,"edge":0.1231,"outcome":0,"pnl":-614.59,"log_return":-5.0,"mae":0.474,"mfe":0.0273,"position_size":602.54},{"entry":0.637,"model_prob":0.7484,"edge":0.1115,"outcome":1,"pnl":314.45,"log_return":0.451,"mae":0.109,"mfe":0.363,"position_size":571.81},{"entry":0.4649,"model_prob":0.5916,"edge":0.1267,"outcome":0,"pnl":-599.28,"log_return":-5.0,"mae":0.4649,"mfe":0.0782,"position_size":587.53},{"entry":0.5753,"model_prob":0.6782,"edge":0.103,"outcome":1,"pnl":400.48,"log_return":0.5529,"mae":0.1088,"mfe":0.4247,"position_size":557.57},{"entry":0.5642,"model_prob":0.7112,"edge":0.1471,"outcome":1,"pnl":434.67,"log_return":0.5724,"mae":0.0796,"mfe":0.4358,"position_size":577.59},{"entry":0.5659,"model_prob":0.741,"edge":0.1751,"outcome":1,"pnl":447.67,"log_return":0.5693,"mae":0.0073,"mfe":0.4341,"position_size":599.32},{"entry":0.3958,"model_prob":0.5946,"edge":0.1989,"outcome":1,"pnl":936.8,"log_return":0.927,"mae":0.0271,"mfe":0.6042,"position_size":621.71},{"entry":0.5468,"model_prob":0.6496,"edge":0.1027,"outcome":1,"pnl":540.68,"log_return":0.6036,"mae":0.15,"mfe":0.4532,"position_size":668.55},{"entry":0.6238,"model_prob":0.7257,"edge":0.102,"outcome":1,"pnl":405.62,"log_return":0.472,"mae":0.0774,"mfe":0.3762,"position_size":695.58},{"entry":0.4838,"model_prob":0.7029,"edge":0.2191,"outcome":0,"pnl":-730.18,"log_return":-5.0,"mae":0.4838,"mfe":0.0509,"position_size":715.86},{"entry":0.5181,"model_prob":0.6467,"edge":0.1286,"outcome":0,"pnl":-692.94,"log_return":-5.0,"mae":0.5181,"mfe":0.0047,"position_size":679.35},{"entry":0.4997,"model_prob":0.6731,"edge":0.1734,"outcome":0,"pnl":-657.6,"log_return":-5.0,"mae":0.4997,"mfe":0.0061,"position_size":644.71}],"probability_calibration":[{"bin_start":0.1,"bin_end":0.2,"predicted":0.1719,"actual":0.1562,"count":32},{"bin_start":0.2,"bin_end":0.3,"predicted":0.2607,"actual":0.2315,"count":203},{"bin_start":0.3,"bin_end":0.4,"predicted":0.3474,"actual":0.2768,"count":271},{"bin_start":0.4,"bin_end":0.5,"predicted":0.4492,"actual":0.4735,"count":226},{"bin_start":0.5,"bin_end":0.6,"predicted":0.5537,"actual":0.5541,"count":296},{"bin_start":0.6,"bin_end":0.7,"predicted":0.6485,"actual":0.6544,"count":353},{"bin_start":0.7,"bin_end":0.8,"predicted":0.7445,"actual":0.6974,"count":228},{"bin_start":0.8,"bin_end":0.9,"predicted":0.8301,"actual":0.8214,"count":56}]};
+
+const m = DATA.trading_metrics;
+
+const COLORS = {
+  bg: "#0a0e17",
+  card: "#111827",
+  cardBorder: "#1e293b",
+  accent: "#22d3ee",
+  accentDim: "#0e7490",
+  green: "#10b981",
+  red: "#ef4444",
+  amber: "#f59e0b",
+  text: "#e2e8f0",
+  textDim: "#64748b",
+  gridLine: "#1e293b",
+};
+
+const font = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
+
+function MetricCard({ label, value, sub, color }) {
+  return (
+    <div style={{
+      background: COLORS.card,
+      border: `1px solid ${COLORS.cardBorder}`,
+      borderRadius: 8,
+      padding: "16px 20px",
+      minWidth: 0,
+    }}>
+      <div style={{ color: COLORS.textDim, fontSize: 11, fontFamily: font, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 6 }}>{label}</div>
+      <div style={{ color: color || COLORS.text, fontSize: 22, fontFamily: font, fontWeight: 700 }}>{value}</div>
+      {sub && <div style={{ color: COLORS.textDim, fontSize: 11, fontFamily: font, marginTop: 4 }}>{sub}</div>}
+    </div>
+  );
+}
+
+function SectionTitle({ children, icon }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, marginTop: 32 }}>
+      <span style={{ fontSize: 16 }}>{icon}</span>
+      <h2 style={{ color: COLORS.text, fontFamily: font, fontSize: 15, fontWeight: 600, margin: 0, letterSpacing: 0.5 }}>{children}</h2>
+      <div style={{ flex: 1, height: 1, background: COLORS.cardBorder, marginLeft: 12 }} />
+    </div>
+  );
+}
+
+const tabs = ["Overview", "Model", "Trades", "Risk"];
+
+export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState("Overview");
+
+  const equityData = useMemo(() =>
+    DATA.equity_curve.map((v, i) => ({ trade: i, value: v, drawdown: 0 })).map((d, i, arr) => {
+      const peak = Math.max(...arr.slice(0, i + 1).map(x => x.value));
+      return { ...d, drawdown: ((peak - d.value) / peak) * -100 };
+    }), []);
+
+  const featureData = useMemo(() =>
+    Object.entries(DATA.feature_importances).slice(0, 15).map(([name, imp]) => ({
+      name: name.length > 18 ? name.slice(0, 16) + "…" : name,
+      importance: +(imp * 100).toFixed(2),
+    })).reverse(), []);
+
+  const calibrationData = useMemo(() =>
+    DATA.probability_calibration.map(c => ({
+      predicted: +(c.predicted * 100).toFixed(1),
+      actual: +(c.actual * 100).toFixed(1),
+      count: c.count,
+    })), []);
+
+  const foldData = useMemo(() =>
+    DATA.fold_metrics.map(f => ({
+      fold: `Fold ${f.fold}`,
+      accuracy: +(f.accuracy * 100).toFixed(1),
+      precision: +(f.precision * 100).toFixed(1),
+      recall: +(f.recall * 100).toFixed(1),
+      f1: +(f.f1 * 100).toFixed(1),
+    })), []);
+
+  const pnlDist = useMemo(() => {
+    const bins = [];
+    const pnls = DATA.trade_details.map(t => t.pnl);
+    const min = Math.min(...pnls);
+    const max = Math.max(...pnls);
+    const step = (max - min) / 20;
+    for (let i = 0; i < 20; i++) {
+      const lo = min + i * step;
+      const hi = lo + step;
+      const count = pnls.filter(p => p >= lo && p < hi).length;
+      bins.push({ range: `${lo >= 0 ? "+" : ""}${lo.toFixed(0)}`, count, positive: lo >= 0 });
+    }
+    return bins;
+  }, []);
+
+  const edgeVsPnl = useMemo(() =>
+    DATA.trade_details.map((t, i) => ({
+      edge: +(t.edge * 100).toFixed(1),
+      pnl: t.pnl,
+      outcome: t.outcome,
+      idx: i,
+    })), []);
+
+  const maeVsMfe = useMemo(() =>
+    DATA.trade_details.map(t => ({
+      mae: +(t.mae * 100).toFixed(1),
+      mfe: +(t.mfe * 100).toFixed(1),
+      outcome: t.outcome,
+    })), []);
+
+  const cumulativePnl = useMemo(() => {
+    let cum = 0;
+    return DATA.trade_details.map((t, i) => {
+      cum += t.pnl;
+      return { trade: i + 1, cumPnl: +cum.toFixed(2), pnl: t.pnl };
+    });
+  }, []);
+
+  const sharpeColor = m.sharpe_ratio >= 2 ? COLORS.green : m.sharpe_ratio >= 1 ? COLORS.amber : COLORS.red;
+  const wrColor = m.win_rate >= 0.6 ? COLORS.green : m.win_rate >= 0.5 ? COLORS.amber : COLORS.red;
+
+  const tooltipStyle = {
+    contentStyle: { background: COLORS.card, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 6, fontFamily: font, fontSize: 12 },
+    labelStyle: { color: COLORS.textDim },
+    itemStyle: { color: COLORS.text },
+  };
+
+  return (
+    <div style={{
+      background: COLORS.bg,
+      minHeight: "100vh",
+      padding: "24px 32px",
+      fontFamily: font,
+      color: COLORS.text,
+      maxWidth: 1200,
+      margin: "0 auto",
+    }}>
+      {/* Header */}
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: COLORS.accent, letterSpacing: -0.5 }}>
+            POLYMARKET RF
+          </h1>
+          <span style={{ fontSize: 13, color: COLORS.textDim }}>Random Forest Trading Engine</span>
+        </div>
+        <div style={{ fontSize: 11, color: COLORS.textDim, marginTop: 6 }}>
+          Reality check on the "80% win rate with AI and math" claims · 38 features · Walk-forward CV · Honest metrics
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 2, marginTop: 20, marginBottom: 24, borderBottom: `1px solid ${COLORS.cardBorder}`, paddingBottom: 0 }}>
+        {tabs.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              background: activeTab === tab ? COLORS.card : "transparent",
+              color: activeTab === tab ? COLORS.accent : COLORS.textDim,
+              border: "none",
+              borderBottom: activeTab === tab ? `2px solid ${COLORS.accent}` : "2px solid transparent",
+              padding: "10px 20px",
+              fontFamily: font,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              letterSpacing: 0.8,
+              textTransform: "uppercase",
+              transition: "all 0.15s",
+            }}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* ── OVERVIEW TAB ── */}
+      {activeTab === "Overview" && (
+        <>
+          {/* Claim vs Reality Banner */}
+          <div style={{
+            background: "linear-gradient(135deg, #1a0a0a 0%, #0a1a1a 100%)",
+            border: `1px solid ${COLORS.red}33`,
+            borderRadius: 10,
+            padding: "20px 24px",
+            marginBottom: 24,
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 32,
+          }}>
+            <div>
+              <div style={{ color: COLORS.red, fontSize: 11, fontWeight: 700, letterSpacing: 1.5, marginBottom: 8 }}>CLAIMED</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: COLORS.red }}>80%</div>
+              <div style={{ color: COLORS.textDim, fontSize: 12, marginTop: 4 }}>win rate · no validation · 5 features</div>
+            </div>
+            <div>
+              <div style={{ color: COLORS.accent, fontSize: 11, fontWeight: 700, letterSpacing: 1.5, marginBottom: 8 }}>ACTUAL (walk-forward)</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: COLORS.accent }}>{(m.win_rate * 100).toFixed(1)}%</div>
+              <div style={{ color: COLORS.textDim, fontSize: 12, marginTop: 4 }}>win rate · 5-fold TSCV · 38 features · costs included</div>
+            </div>
+          </div>
+
+          {/* Key Metrics */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+            <MetricCard label="Total Trades" value={m.total_trades} sub={`${m.wins}W / ${m.losses}L`} />
+            <MetricCard label="Win Rate" value={`${(m.win_rate * 100).toFixed(1)}%`} color={wrColor} sub="After costs" />
+            <MetricCard label="Total P&L" value={`$${m.total_pnl.toLocaleString()}`} color={m.total_pnl >= 0 ? COLORS.green : COLORS.red} />
+            <MetricCard label="Return" value={`${m.return_pct}%`} color={m.return_pct >= 0 ? COLORS.green : COLORS.red} sub="On $10k initial" />
+            <MetricCard label="Sharpe Ratio" value={m.sharpe_ratio.toFixed(2)} color={sharpeColor} sub={m.sharpe_ratio >= 2 ? "Excellent" : m.sharpe_ratio >= 1 ? "Good" : "Bad"} />
+            <MetricCard label="Max Drawdown" value={`${(m.max_drawdown * 100).toFixed(1)}%`} color={COLORS.amber} />
+            <MetricCard label="Profit Factor" value={m.profit_factor.toFixed(2)} color={m.profit_factor >= 1.5 ? COLORS.green : m.profit_factor >= 1 ? COLORS.amber : COLORS.red} />
+            <MetricCard label="Avg Edge" value={`${(m.avg_edge * 100).toFixed(1)}%`} color={COLORS.accent} />
+          </div>
+
+          {/* Equity Curve */}
+          <SectionTitle icon="📈">Equity Curve</SectionTitle>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 8, padding: "20px 16px 12px" }}>
+            <ResponsiveContainer width="100%" height={280}>
+              <ComposedChart data={equityData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={COLORS.gridLine} />
+                <XAxis dataKey="trade" stroke={COLORS.textDim} fontSize={10} fontFamily={font} />
+                <YAxis yAxisId="eq" stroke={COLORS.textDim} fontSize={10} fontFamily={font} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+                <YAxis yAxisId="dd" orientation="right" stroke={COLORS.textDim} fontSize={10} fontFamily={font} tickFormatter={v => `${v.toFixed(0)}%`} />
+                <Tooltip {...tooltipStyle} />
+                <Area yAxisId="dd" dataKey="drawdown" fill={COLORS.red + "15"} stroke="none" />
+                <Line yAxisId="eq" type="monotone" dataKey="value" stroke={COLORS.accent} strokeWidth={2} dot={false} />
+                <ReferenceLine yAxisId="eq" y={10000} stroke={COLORS.textDim} strokeDasharray="5 5" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Cumulative P&L */}
+          <SectionTitle icon="💰">Cumulative P&L per Trade</SectionTitle>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 8, padding: "20px 16px 12px" }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={cumulativePnl}>
+                <CartesianGrid strokeDasharray="3 3" stroke={COLORS.gridLine} />
+                <XAxis dataKey="trade" stroke={COLORS.textDim} fontSize={10} fontFamily={font} />
+                <YAxis stroke={COLORS.textDim} fontSize={10} fontFamily={font} tickFormatter={v => `$${v.toFixed(0)}`} />
+                <Tooltip {...tooltipStyle} />
+                <ReferenceLine y={0} stroke={COLORS.textDim} strokeDasharray="5 5" />
+                <Area type="monotone" dataKey="cumPnl" stroke={COLORS.green} fill={COLORS.green + "20"} strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </>
+      )}
+
+      {/* ── MODEL TAB ── */}
+      {activeTab === "Model" && (
+        <>
+          {/* Config */}
+          <div style={{
+            background: COLORS.card, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 8,
+            padding: "16px 20px", marginBottom: 24, display: "flex", gap: 32, flexWrap: "wrap",
+          }}>
+            {Object.entries(DATA.config).map(([k, v]) => (
+              <div key={k}>
+                <div style={{ color: COLORS.textDim, fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>{k.replace(/_/g, " ")}</div>
+                <div style={{ color: COLORS.accent, fontSize: 16, fontWeight: 700, marginTop: 2 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Cross-Validation */}
+          <SectionTitle icon="🔄">Walk-Forward Cross-Validation</SectionTitle>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 8, padding: "20px 16px 12px" }}>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={foldData} barGap={4}>
+                <CartesianGrid strokeDasharray="3 3" stroke={COLORS.gridLine} />
+                <XAxis dataKey="fold" stroke={COLORS.textDim} fontSize={11} fontFamily={font} />
+                <YAxis stroke={COLORS.textDim} fontSize={10} fontFamily={font} domain={[50, 80]} tickFormatter={v => `${v}%`} />
+                <Tooltip {...tooltipStyle} />
+                <Legend iconSize={8} wrapperStyle={{ fontFamily: font, fontSize: 11 }} />
+                <Bar dataKey="accuracy" fill={COLORS.accent} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="precision" fill={COLORS.green} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="f1" fill={COLORS.amber} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Feature Importances */}
+          <SectionTitle icon="🧬">Feature Importances (Top 15)</SectionTitle>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 8, padding: "20px 16px 12px" }}>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={featureData} layout="vertical" margin={{ left: 120 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={COLORS.gridLine} />
+                <XAxis type="number" stroke={COLORS.textDim} fontSize={10} fontFamily={font} tickFormatter={v => `${v}%`} />
+                <YAxis type="category" dataKey="name" stroke={COLORS.textDim} fontSize={10} fontFamily={font} width={110} />
+                <Tooltip {...tooltipStyle} />
+                <Bar dataKey="importance" radius={[0, 4, 4, 0]}>
+                  {featureData.map((_, i) => (
+                    <Cell key={i} fill={i >= featureData.length - 3 ? COLORS.accent : COLORS.accentDim} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Calibration */}
+          <SectionTitle icon="🎯">Probability Calibration</SectionTitle>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 8, padding: "20px 16px 12px" }}>
+            <ResponsiveContainer width="100%" height={260}>
+              <ComposedChart data={calibrationData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={COLORS.gridLine} />
+                <XAxis dataKey="predicted" stroke={COLORS.textDim} fontSize={10} fontFamily={font} label={{ value: "Predicted %", position: "bottom", fill: COLORS.textDim, fontSize: 10, fontFamily: font }} />
+                <YAxis stroke={COLORS.textDim} fontSize={10} fontFamily={font} label={{ value: "Actual %", angle: -90, position: "insideLeft", fill: COLORS.textDim, fontSize: 10, fontFamily: font }} />
+                <Tooltip {...tooltipStyle} />
+                <ReferenceLine stroke={COLORS.textDim} strokeDasharray="5 5" segment={[{ x: 15, y: 15 }, { x: 85, y: 85 }]} />
+                <Bar dataKey="actual" fill={COLORS.accent + "40"} radius={[3, 3, 0, 0]} />
+                <Line type="monotone" dataKey="actual" stroke={COLORS.accent} strokeWidth={2} dot={{ fill: COLORS.accent, r: 4 }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+            <div style={{ textAlign: "center", color: COLORS.textDim, fontSize: 11, marginTop: 8 }}>
+              Perfect calibration = dots on the diagonal. Overconfident above, underconfident below.
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── TRADES TAB ── */}
+      {activeTab === "Trades" && (
+        <>
+          {/* P&L Distribution */}
+          <SectionTitle icon="📊">P&L Distribution</SectionTitle>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 8, padding: "20px 16px 12px" }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={pnlDist}>
+                <CartesianGrid strokeDasharray="3 3" stroke={COLORS.gridLine} />
+                <XAxis dataKey="range" stroke={COLORS.textDim} fontSize={9} fontFamily={font} interval={2} />
+                <YAxis stroke={COLORS.textDim} fontSize={10} fontFamily={font} />
+                <Tooltip {...tooltipStyle} />
+                <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+                  {pnlDist.map((d, i) => (
+                    <Cell key={i} fill={d.positive ? COLORS.green + "cc" : COLORS.red + "cc"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Edge vs P&L scatter */}
+          <SectionTitle icon="⚡">Edge vs P&L</SectionTitle>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 8, padding: "20px 16px 12px" }}>
+            <ResponsiveContainer width="100%" height={280}>
+              <ScatterChart>
+                <CartesianGrid strokeDasharray="3 3" stroke={COLORS.gridLine} />
+                <XAxis type="number" dataKey="edge" name="Edge %" stroke={COLORS.textDim} fontSize={10} fontFamily={font} />
+                <YAxis type="number" dataKey="pnl" name="P&L" stroke={COLORS.textDim} fontSize={10} fontFamily={font} tickFormatter={v => `$${v}`} />
+                <Tooltip {...tooltipStyle} cursor={{ strokeDasharray: "3 3" }} />
+                <ReferenceLine y={0} stroke={COLORS.textDim} strokeDasharray="5 5" />
+                <Scatter data={edgeVsPnl}>
+                  {edgeVsPnl.map((d, i) => (
+                    <Cell key={i} fill={d.outcome === 1 ? COLORS.green : COLORS.red} fillOpacity={0.7} r={5} />
+                  ))}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
+            <div style={{ textAlign: "center", color: COLORS.textDim, fontSize: 11, marginTop: 8 }}>
+              Green = win · Red = loss. Higher edge doesn't guarantee profit — the article ignores this.
+            </div>
+          </div>
+
+          {/* Trade Table */}
+          <SectionTitle icon="📋">Recent Trades (last 20)</SectionTitle>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 8, overflow: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: font, fontSize: 11 }}>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${COLORS.cardBorder}` }}>
+                  {["#", "Entry", "Model P", "Edge", "Outcome", "P&L", "Size"].map(h => (
+                    <th key={h} style={{ padding: "10px 12px", textAlign: "left", color: COLORS.textDim, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {DATA.trade_details.slice(-20).map((t, i) => (
+                  <tr key={i} style={{ borderBottom: `1px solid ${COLORS.cardBorder}11` }}>
+                    <td style={{ padding: "8px 12px", color: COLORS.textDim }}>{DATA.trade_details.length - 19 + i}</td>
+                    <td style={{ padding: "8px 12px" }}>{(t.entry * 100).toFixed(1)}¢</td>
+                    <td style={{ padding: "8px 12px", color: COLORS.accent }}>{(t.model_prob * 100).toFixed(1)}%</td>
+                    <td style={{ padding: "8px 12px" }}>{(t.edge * 100).toFixed(1)}%</td>
+                    <td style={{ padding: "8px 12px" }}>
+                      <span style={{
+                        background: t.outcome ? COLORS.green + "22" : COLORS.red + "22",
+                        color: t.outcome ? COLORS.green : COLORS.red,
+                        padding: "2px 8px",
+                        borderRadius: 4,
+                        fontSize: 10,
+                        fontWeight: 700,
+                      }}>
+                        {t.outcome ? "YES" : "NO"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "8px 12px", color: t.pnl >= 0 ? COLORS.green : COLORS.red, fontWeight: 600 }}>
+                      {t.pnl >= 0 ? "+" : ""}{t.pnl.toFixed(0)}
+                    </td>
+                    <td style={{ padding: "8px 12px", color: COLORS.textDim }}>${t.position_size.toFixed(0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* ── RISK TAB ── */}
+      {activeTab === "Risk" && (
+        <>
+          {/* MAE vs MFE */}
+          <SectionTitle icon="🎯">MAE vs MFE Analysis</SectionTitle>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 8, padding: "20px 16px 12px" }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <ScatterChart>
+                <CartesianGrid strokeDasharray="3 3" stroke={COLORS.gridLine} />
+                <XAxis type="number" dataKey="mae" name="MAE %" stroke={COLORS.textDim} fontSize={10} fontFamily={font} label={{ value: "Max Adverse Excursion %", position: "bottom", fill: COLORS.textDim, fontSize: 10 }} />
+                <YAxis type="number" dataKey="mfe" name="MFE %" stroke={COLORS.textDim} fontSize={10} fontFamily={font} label={{ value: "Max Favorable Excursion %", angle: -90, position: "insideLeft", fill: COLORS.textDim, fontSize: 10 }} />
+                <Tooltip {...tooltipStyle} />
+                <Scatter data={maeVsMfe}>
+                  {maeVsMfe.map((d, i) => (
+                    <Cell key={i} fill={d.outcome === 1 ? COLORS.green : COLORS.red} fillOpacity={0.6} r={5} />
+                  ))}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
+            <div style={{ textAlign: "center", color: COLORS.textDim, fontSize: 11, marginTop: 8 }}>
+              Losses cluster at high MAE / low MFE (bottom-right). The article mentions this metric but doesn't show how to act on it.
+            </div>
+          </div>
+
+          {/* Risk Metrics */}
+          <SectionTitle icon="⚠️">Risk Summary</SectionTitle>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+            <MetricCard label="Avg MAE" value={`${(m.avg_mae * 100).toFixed(1)}%`} color={COLORS.red} sub="How deep positions go red" />
+            <MetricCard label="Avg MFE" value={`${(m.avg_mfe * 100).toFixed(1)}%`} color={COLORS.green} sub="Max unrealized gain" />
+            <MetricCard label="Avg Win" value={`$${m.avg_win.toFixed(0)}`} color={COLORS.green} />
+            <MetricCard label="Avg Loss" value={`$${m.avg_loss.toFixed(0)}`} color={COLORS.red} />
+            <MetricCard label="Avg Position" value={`$${m.avg_position_size.toFixed(0)}`} sub="Quarter-Kelly sizing" />
+            <MetricCard label="Win/Loss Ratio" value={(m.avg_win / Math.abs(m.avg_loss)).toFixed(2)} color={COLORS.amber} sub="< 1.0 means losses > wins in size" />
+          </div>
+
+          {/* Verdict */}
+          <div style={{
+            background: COLORS.card,
+            border: `1px solid ${COLORS.amber}44`,
+            borderRadius: 10,
+            padding: "24px 28px",
+            marginTop: 32,
+          }}>
+            <div style={{ color: COLORS.amber, fontSize: 13, fontWeight: 700, letterSpacing: 1, marginBottom: 12 }}>HONEST VERDICT</div>
+            <div style={{ color: COLORS.text, fontSize: 13, lineHeight: 1.7 }}>
+              With proper walk-forward validation, 38 real features, and transaction costs:
+              the win rate drops from the claimed 80% to <span style={{ color: COLORS.accent, fontWeight: 700 }}>{(m.win_rate * 100).toFixed(1)}%</span>.
+              The Sharpe Ratio is <span style={{ color: sharpeColor, fontWeight: 700 }}>{m.sharpe_ratio.toFixed(2)}</span> (bad — anything under 1.0 is not worth trading).
+              The strategy is marginally profitable ($<span style={{ color: COLORS.green }}>{m.total_pnl.toLocaleString()}</span> on $10k) but with
+              a <span style={{ color: COLORS.amber }}>{(m.max_drawdown * 100).toFixed(1)}%</span> max drawdown and a profit factor of only {m.profit_factor}.
+              Average losses ($<span style={{ color: COLORS.red }}>{Math.abs(m.avg_loss).toFixed(0)}</span>) exceed average wins ($<span style={{ color: COLORS.green }}>{m.avg_win.toFixed(0)}</span>).
+            </div>
+            <div style={{ color: COLORS.textDim, fontSize: 12, marginTop: 16, lineHeight: 1.6 }}>
+              The original article's claims are not reproducible under honest conditions. The concepts (RF, Sharpe, MAE/MFE, Kelly) are real,
+              but the execution and performance claims are marketing, not science.
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Footer */}
+      <div style={{ marginTop: 48, paddingTop: 16, borderTop: `1px solid ${COLORS.cardBorder}`, textAlign: "center" }}>
+        <div style={{ color: COLORS.textDim, fontSize: 10, letterSpacing: 1 }}>
+          POLYMARKET RF · Built as a reality-check exercise · Not financial advice · Synthetic data
+        </div>
+      </div>
+    </div>
+  );
+}
